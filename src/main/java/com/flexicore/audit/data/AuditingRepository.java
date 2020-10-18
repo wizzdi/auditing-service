@@ -6,6 +6,7 @@ import com.flexicore.audit.codec.ResponseHolderCodec;
 import com.flexicore.audit.model.*;
 import com.flexicore.audit.request.AuditingFilter;
 import com.flexicore.interfaces.AbstractNoSqlRepositoryPlugin;
+import com.flexicore.interfaces.ServicePlugin;
 import com.flexicore.request.GetClassInfo;
 import com.flexicore.utils.InheritanceUtils;
 import com.mongodb.MongoClientSettings;
@@ -44,7 +45,7 @@ import static org.bson.codecs.configuration.CodecRegistries.fromRegistries;
 @Component
 @Extension
 @PluginInfo(version = 1)
-public class AuditingRepository extends AbstractNoSqlRepositoryPlugin {
+public class AuditingRepository extends AbstractNoSqlRepositoryPlugin implements ServicePlugin {
     public static final String AUDITING_COLLECION_NAME = "Auditing";
 
     private static final String DATE_OCCURRED = "dateOccurred";
