@@ -52,19 +52,17 @@ public class AuditingService implements ServicePlugin {
     private BaseclassNewService baseclassNewService;
 
 
-
-
     @Async
     @EventListener
-    public void handleAuditingEvent( AuditingEvent auditingEvent){
+    public void handleAuditingEvent(AuditingEvent auditingEvent) {
         auditingRepository.merge(auditingEvent);
-        logger.info("Call to "+auditingEvent.getOperationHolder() +" was Audited");
+        logger.info("Call to " + auditingEvent.getOperationHolder() + " was Audited");
     }
 
     @Async
     @EventListener
     public void createAuditingEvent(AuditingJob auditingJob) {
-        ObjectMapper objectMapper=ObjectMapperContextResolver.getDefaultMapper();
+        ObjectMapper objectMapper = ObjectMapperContextResolver.getDefaultMapper();
         Stream<Object> parameters = Stream.of(auditingJob.getParameters());
 
 
@@ -72,60 +70,60 @@ public class AuditingService implements ServicePlugin {
 
 
         SecurityContext securityContext = auditingJob.getSecurityContext();
-        List<ParameterHolder> parameterHolders = auditingJob.getParameters().stream().filter(f->!(f instanceof SecurityContext)).map(f -> new ParameterHolder(mapToMap(f))).collect(Collectors.toList());
+        List<ParameterHolder> parameterHolders = auditingJob.getParameters().stream().filter(f -> !(f instanceof SecurityContext)).map(f -> new ParameterHolder(mapToMap(f))).collect(Collectors.toList());
         AuditingEvent auditingEvent = new AuditingEvent()
                 .setDateOccurred(auditingJob.getDateOccured())
-                .setOperationHolder(securityContext !=null&&securityContext.getOperation()!=null?new OperationHolder(securityContext.getOperation()):null)
-                .setUserHolder(securityContext !=null&&securityContext.getUser()!=null?new UserHolder(securityContext.getUser()):null)
+                .setOperationHolder(securityContext != null && securityContext.getOperation() != null ? new OperationHolder(securityContext.getOperation()) : null)
+                .setUserHolder(securityContext != null && securityContext.getUser() != null ? new UserHolder(securityContext.getUser()) : null)
                 .setRequest(new RequestHolder().setParameters(parameterHolders))
-                .setResponse(new ResponseHolder(mapToMap(auditingJob.getResponse())))
                 .setTimeTaken(auditingJob.getTimeTaken())
                 .setAuditingType(auditingJob.getAuditingType())
                 .setFailed(auditingJob.isFailed());
+        if (auditingJob.getResponse() != null) {
+            auditingEvent.setResponse(new ResponseHolder(mapToMap(auditingJob.getResponse())));
+        }
         auditingRepository.merge(auditingEvent);
-        logger.info("Call to "+auditingEvent.getOperationHolder() +" was Audited");
+        logger.info("Call to " + auditingEvent.getOperationHolder() + " was Audited");
     }
 
     private Map<String, Object> mapToMap(Object response) {
-        if(response instanceof String){
-            Map<String,Object> toRet=new HashMap<>();
+        if (response instanceof String) {
+            Map<String, Object> toRet = new HashMap<>();
 
-            toRet.put("stringValue",response);
+            toRet.put("stringValue", response);
             return toRet;
-        }
-        else{
-            if(response instanceof Integer || response instanceof Float || response instanceof Double || response instanceof Long ){
-                Map<String,Object> toRet=new HashMap<>();
+        } else {
+            if (response instanceof Integer || response instanceof Float || response instanceof Double || response instanceof Long) {
+                Map<String, Object> toRet = new HashMap<>();
 
-                toRet.put("numericValue",response);
+                toRet.put("numericValue", response);
                 return toRet;
-            }
-            else{
-                TypeReference<Map<String,Object>> t=new TypeReference<Map<String,Object>>(){};
-                return ObjectMapperContextResolver.getDefaultMapper().convertValue(response,t);
+            } else {
+                TypeReference<Map<String, Object>> t = new TypeReference<Map<String, Object>>() {
+                };
+                return ObjectMapperContextResolver.getDefaultMapper().convertValue(response, t);
             }
         }
-
 
 
     }
 
-    private boolean isFirstAuthToken( Parameter[] parameters) {
-        if(parameters.length > 0 ){
+    private boolean isFirstAuthToken(Parameter[] parameters) {
+        if (parameters.length > 0) {
             Parameter parameter = parameters[0];
-            HeaderParam headerParam= parameter.getAnnotation(HeaderParam.class);
-            if(headerParam!=null){
+            HeaderParam headerParam = parameter.getAnnotation(HeaderParam.class);
+            if (headerParam != null) {
                 return "authenticationkey".toLowerCase().equals(headerParam.value().toLowerCase());
             }
-            PathParam pathParam= parameter.getAnnotation(PathParam.class);
+            PathParam pathParam = parameter.getAnnotation(PathParam.class);
 
-            if(pathParam!=null){
+            if (pathParam != null) {
                 return "authenticationkey".toLowerCase().equals(pathParam.value().toLowerCase());
             }
 
-            QueryParam queryParam= parameter.getAnnotation(QueryParam.class);
+            QueryParam queryParam = parameter.getAnnotation(QueryParam.class);
 
-            if(queryParam!=null){
+            if (queryParam != null) {
                 return "authenticationkey".toLowerCase().equals(queryParam.value().toLowerCase());
             }
         }
@@ -133,24 +131,25 @@ public class AuditingService implements ServicePlugin {
     }
 
     public PaginationResponse<AuditingEvent> getAllAuditingEvents(AuditingFilter auditingFilter, SecurityContext securityContext) {
-        List<AuditingEvent> auditingEvents=auditingRepository.listAllAuditingEvents(auditingFilter);
-        long count =auditingRepository.countAllAuditingEvents(auditingFilter);
-        return new PaginationResponse<>(auditingEvents,auditingFilter,count);
+        List<AuditingEvent> auditingEvents = auditingRepository.listAllAuditingEvents(auditingFilter);
+        long count = auditingRepository.countAllAuditingEvents(auditingFilter);
+        return new PaginationResponse<>(auditingEvents, auditingFilter, count);
     }
+
     public void validate(AuditingFilter auditingFilter, SecurityContext securityContext) {
-        Set<String> operationIds=auditingFilter.getOperationIds().stream().map(f->f.getId()).collect(Collectors.toSet());
-        Map<String, Operation> operationMap=operationIds.isEmpty()?new HashMap<>():baseclassNewService.listByIds(Operation.class,operationIds,securityContext).stream().collect(Collectors.toMap(f->f.getId(), f->f));
+        Set<String> operationIds = auditingFilter.getOperationIds().stream().map(f -> f.getId()).collect(Collectors.toSet());
+        Map<String, Operation> operationMap = operationIds.isEmpty() ? new HashMap<>() : baseclassNewService.listByIds(Operation.class, operationIds, securityContext).stream().collect(Collectors.toMap(f -> f.getId(), f -> f));
         operationIds.removeAll(operationMap.keySet());
-        if(!operationIds.isEmpty()){
-            throw new BadRequestException("No Operations with ids "+operationIds);
+        if (!operationIds.isEmpty()) {
+            throw new BadRequestException("No Operations with ids " + operationIds);
         }
         auditingFilter.setOperations(new ArrayList<>(operationMap.values()));
 
-        Set<String> userIds=auditingFilter.getUserIds().stream().map(f->f.getId()).collect(Collectors.toSet());
-        Map<String, User> userMap=userIds.isEmpty()?new HashMap<>():baseclassNewService.listByIds(User.class,userIds,securityContext).stream().collect(Collectors.toMap(f->f.getId(), f->f));
+        Set<String> userIds = auditingFilter.getUserIds().stream().map(f -> f.getId()).collect(Collectors.toSet());
+        Map<String, User> userMap = userIds.isEmpty() ? new HashMap<>() : baseclassNewService.listByIds(User.class, userIds, securityContext).stream().collect(Collectors.toMap(f -> f.getId(), f -> f));
         userIds.removeAll(userMap.keySet());
-        if(!userIds.isEmpty()){
-            throw new BadRequestException("No User with ids "+userIds);
+        if (!userIds.isEmpty()) {
+            throw new BadRequestException("No User with ids " + userIds);
         }
         auditingFilter.setUsers(new ArrayList<>(userMap.values()));
     }

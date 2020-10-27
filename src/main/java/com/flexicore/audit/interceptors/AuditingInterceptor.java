@@ -75,6 +75,7 @@ public class AuditingInterceptor implements AspectPlugin {
                 long time=System.currentTimeMillis()-start;
                 List<Object> parametersList = Stream.of(parameters).collect(Collectors.toList());
                 applicationEventPublisher.publishEvent(new AuditingJob(securityContext, parametersList,response,time,new Date(), DefaultAuditingTypes.REST.name()));
+                logger.debug("operation "+methodName+" was audited");
             }
         }
 
