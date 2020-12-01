@@ -7,7 +7,7 @@
     <groupId>com.wizzdi</groupId>
     <artifactId>auditing-service</artifactId>
     <version>1.0.1-SNAPSHOT</version>
-    <name>auditing-model</name>
+    <name>auditing-service</name>
     <description>FlexiCore service plugin , adds auditing </description>
     <url>https://wizzdi.com</url>
 
