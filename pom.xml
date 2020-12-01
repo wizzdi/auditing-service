@@ -30,6 +30,7 @@
         <spring-boot-dependencies.version>2.3.0.RELEASE</spring-boot-dependencies.version>
         <reflections>${project.build.outputDirectory}/META-INF/reflections/${project.artifactId}-reflections.json</reflections>
 
+        <FlexiCore.version>4.2.6</FlexiCore.version>
     </properties>
     <distributionManagement>
         <snapshotRepository>
@@ -169,7 +170,7 @@
         <dependency>
             <groupId>com.wizzdi</groupId>
             <artifactId>FlexiCore</artifactId>
-            <version>4.2.0-SNAPSHOT</version>
+            <version>${FlexiCore.version}</version>
             <scope>test</scope>
         </dependency>
         <dependency>
